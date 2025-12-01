@@ -11,10 +11,10 @@
         <nav>
             <a href="{{ route('dosen.dashboard') }}">Dashboard</a> |
             <span>Selamat Datang, {{ Auth::guard('dosen')->user()->nama }}</span> |
-            {{-- <form action="{{ route('dosen.logout') }}" method="POST" style="display:inline;">
+            <form action="{{ route('logout') }}" method="POST" style="display:inline;">
                 @csrf
                 <button type="submit">Logout</button>
-            </form> --}}
+            </form>
         </nav>
         </header>
 

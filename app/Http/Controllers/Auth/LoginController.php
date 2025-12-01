@@ -61,4 +61,22 @@ class LoginController extends Controller
         }
         return 'username'; // Default atau fallback
     }
+
+    /**
+     * Menangani proses logout untuk guard yang sedang aktif.
+     */
+    public function logout(Request $request)
+    {
+        // 1. Panggil fungsi logout() dari facade Auth.
+        // Ini akan secara otomatis mengakhiri sesi guard yang sedang aktif (admin, dosen, atau mahasiswa).
+        Auth::logout();
+
+        // 2. Invalidate sesi dan regenerate token
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // 3. Redirect ke halaman login atau halaman utama
+        return redirect()->route('login')->with('success', 'Anda berhasil logout.');
+    }
 }
+
