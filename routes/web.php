@@ -39,13 +39,20 @@ Route::post('/absen/{id_jadwal}', [MahasiswaController::class, 'absen'])->name('
 // ... di dalam Route::middleware('auth.admin')->group(function () { ...
 
 // --- RUTE UMUM ADMIN ---
+// Route::controller(AdminController::class)->prefix("admin")->group(function (){
 Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
+// });
+
 // --- RUTE DATA MASTER ---
+Route::controller(DosenController::class)->prefix("dosen")->group(function(){
+    Route::get("/dashboard","dashboard")->name("dosen.dashboard");
+});
 Route::prefix('datamaster')->name('admin.datamaster.')->group(function () {
 
     // Manajemen Dosen
     Route::prefix('dosen')->name('dosen.')->group(function () {
+
         Route::get('/', [DataMasterController::class, 'indexDosen'])->name('index');
         Route::get('/create', [DataMasterController::class, 'createDosen'])->name('create');
         Route::post('/', [DataMasterController::class, 'storeDosen'])->name('store');
@@ -53,16 +60,26 @@ Route::prefix('datamaster')->name('admin.datamaster.')->group(function () {
         // Tambahkan rute untuk edit/update di sini
     });
 
-    // Manajemen Mahasiswa (Rute serupa dengan Dosen)
-    // ...
+    Route::prefix('kelas')->name('kelas.')->group(function () {
+        Route::get('/', [DataMasterController::class, 'indexKelas'])->name('index');
+        Route::get('/create', [DataMasterController::class, 'createKelas'])->name('create');
+        Route::post('/', [DataMasterController::class, 'storeKelas'])->name('store');
+        Route::delete('/{kelas}', [DataMasterController::class, 'destroyKelas'])->name('destroy');
+    });
 
-    // Manajemen Kelas (Rute serupa dengan Dosen)
-    // ...
-
-    // Manajemen Mata Kuliah (Rute serupa dengan Dosen)
-    // ...
+    Route::prefix('matkul')->name('matkul.')->group(function () {
+        Route::get('/', [DataMasterController::class, 'indexMatkul'])->name('index');
+        Route::get('/create', [DataMasterController::class, 'createMatkul'])->name('create');
+        Route::post('/', [DataMasterController::class, 'storeMatkul'])->name('store');
+        Route::delete('/{matkul}', [DataMasterController::class, 'destroyMatkul'])->name('destroy');
+    });
 });
 
-
+Route::prefix('jadwal')->name('jadwal.')->group(function () {
+    Route::get('/', [DataMasterController::class, 'indexJadwal'])->name('index');
+    Route::get('/create', [DataMasterController::class, 'createJadwal'])->name('create');
+    Route::post('/', [DataMasterController::class, 'storeJadwal'])->name('store');
+    Route::delete('/{jadwal}', [DataMasterController::class, 'destroyJadwal'])->name('destroy');
+});
 
 

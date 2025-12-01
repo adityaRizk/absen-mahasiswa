@@ -27,7 +27,7 @@ class AdminController extends Controller
         // Contoh Laporan Sederhana: Kehadiran Tertinggi (Top 5)
         // Kita hitung jumlah kehadiran 'Hadir' per mahasiswa
         $topKehadiran = AbsenMahasiswa::select('nim', DB::raw('count(*) as total_hadir'))
-            ->where('status_absen', 'Hadir')
+            ->where('status', 'Hadir')
             ->groupBy('nim')
             ->orderByDesc('total_hadir')
             ->limit(5)
