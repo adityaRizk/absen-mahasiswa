@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         Admin::insert([
             [
                 'username' => 'admin',
-                'nama' => 'Super Admin',
+                'nama' => 'Admin',
                 'email' => 'admin@kampus.ac.id',
                 'password' => Hash::make('admin123'),
                 'created_at' => now(),
@@ -100,6 +100,17 @@ class DatabaseSeeder extends Seeder
         ]);
 
         JadwalMengajar::insert([
+            [
+                // Jadwal 1
+                'kode_matkul' => 'BD40',
+                'kode_kelas' => 'TI2A',
+                'nip' => '197001012000011001',
+                'hari' => 'Minggu',
+                'jam_mulai' => '17:00:00',
+                'jam_selesai' => '21:30:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
             [
                 // Jadwal 1
                 'kode_matkul' => 'BD40',

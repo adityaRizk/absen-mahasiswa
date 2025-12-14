@@ -21,7 +21,7 @@ class Kelas extends Model
     ];
 
     // Relasi ke Mahasiswa (One-to-Many)
-    public function mahasiswas()
+    public function mahasiswa()
     {
         return $this->hasMany(Mahasiswa::class, 'kode_kelas', 'kode_kelas');
     }

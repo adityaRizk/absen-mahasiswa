@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Dosen;
 use App\Models\Kelas;
+use App\Models\Mahasiswa;
 use App\Models\MatkulDasar;
 use Illuminate\Http\Request;
 use App\Models\JadwalMengajar;
@@ -70,6 +71,42 @@ class DataMasterController extends Controller
     }
 
     /**
+     * Menampilkan form edit Dosen.
+     */
+    public function editDosen(Dosen $dosen)
+    {
+        return view('admin.datamaster.dosen.edit', compact('dosen'));
+    }
+
+    /**
+     * Menyimpan perubahan data Dosen.
+     */
+    public function updateDosen(Request $request, Dosen $dosen)
+    {
+        $request->validate([
+            // NIP tidak boleh diubah jika sudah ada. Jika boleh, tambahkan Rule::unique pengecualian ID.
+            'nama' => 'required|string|max:40',
+            // Pastikan email unik, kecuali email yang sedang dimiliki dosen ini
+            'email' => ['required', 'email', 'max:40', Rule::unique('dosen', 'email')->ignore($dosen->nip, 'nip')],
+            'no_telp' => 'nullable|max:15',
+            'password_baru' => 'nullable|min:6', // Password opsional diubah
+        ]);
+
+        $dosen->nama = $request->nama;
+        $dosen->email = $request->email;
+        $dosen->no_telp = $request->no_telp;
+
+        // Cek jika password_baru diisi, hash dan update
+        if ($request->filled('password_baru')) {
+            $dosen->password = Hash::make($request->password_baru);
+        }
+
+        $dosen->save();
+
+        return redirect()->route('admin.datamaster.dosen.index')->with('success', 'Data Dosen berhasil diperbarui.');
+    }
+
+    /**
      * Menampilkan daftar semua Kelas.
      */
     public function indexKelas()
@@ -116,6 +153,32 @@ class DataMasterController extends Controller
         // mahasiswa dan jadwal yang terikat. (Harus hati-hati di production!)
         $kelas->delete();
         return redirect()->route('admin.datamaster.kelas.index')->with('success', 'Data Kelas berhasil dihapus.');
+    }
+
+    /**
+     * Menampilkan form edit Kelas.
+     */
+    public function editKelas(Kelas $kelas)
+    {
+        return view('admin.datamaster.kelas.edit', compact('kelas'));
+    }
+
+    /**
+     * Menyimpan perubahan data Kelas.
+     */
+    public function updateKelas(Request $request, Kelas $kelas)
+    {
+        $request->validate([
+            // Kode kelas tidak diizinkan diubah jika sudah ada relasi data
+            'jurusan' => 'required|string|max:30',
+            'semester' => 'required|integer|min:1|max:8',
+        ]);
+
+        $kelas->jurusan = $request->jurusan;
+        $kelas->semester = $request->semester;
+        $kelas->save();
+
+        return redirect()->route('admin.datamaster.kelas.index')->with('success', 'Data Kelas berhasil diperbarui.');
     }
 
     // --- Manajemen Mata Kuliah Dasar ---
@@ -165,6 +228,34 @@ class DataMasterController extends Controller
         // Penghapusan matkul akan menghapus semua jadwal_mengajar yang terikat
         $matkul->delete();
         return redirect()->route('admin.datamaster.matkul.index')->with('success', 'Data Mata Kuliah berhasil dihapus.');
+    }
+
+    // --- Manajemen Mata Kuliah Dasar (Lanjutan) ---
+
+    /**
+     * Menampilkan form edit Mata Kuliah.
+     */
+    public function editMatkul(MatkulDasar $matkul)
+    {
+        return view('admin.datamaster.matkul.edit', compact('matkul'));
+    }
+
+    /**
+     * Menyimpan perubahan data Mata Kuliah.
+     */
+    public function updateMatkul(Request $request, MatkulDasar $matkul)
+    {
+        $request->validate([
+            // Kode matkul tidak diizinkan diubah jika sudah ada relasi data
+            'nama_matkul' => 'required|string|max:50',
+            'sks' => 'required|integer|min:1|max:6',
+        ]);
+
+        $matkul->nama_matkul = $request->nama_matkul;
+        $matkul->sks = $request->sks;
+        $matkul->save();
+
+        return redirect()->route('admin.datamaster.matkul.index')->with('success', 'Data Mata Kuliah berhasil diperbarui.');
     }
 
     /**
@@ -270,5 +361,98 @@ class DataMasterController extends Controller
         ];
     }
 
+    /**
+     * Menampilkan daftar semua Mahasiswa.
+     */
+    public function indexMahasiswa()
+    {
+        $mahasiswas = Mahasiswa::with('kelas')->orderBy('nim')->get();
+        return view('admin.datamaster.mahasiswa.index', compact('mahasiswas'));
+    }
+
+    /**
+     * Menampilkan form untuk menambah Mahasiswa baru.
+     */
+    public function createMahasiswa()
+    {
+        $kelas = Kelas::orderBy('kode_kelas')->get();
+        return view('admin.datamaster.mahasiswa.create', compact('kelas'));
+    }
+
+    /**
+     * Menyimpan Mahasiswa baru dari form.
+     */
+    public function storeMahasiswa(Request $request)
+    {
+        $request->validate([
+            'nim' => 'required|char|unique:mahasiswa,nim|max:8',
+            'kode_kelas' => 'required|exists:kelas,kode_kelas',
+            'nama' => 'required|string|max:40',
+            'tanggal_lahir' => 'nullable|date',
+            'email' => 'required|email|unique:mahasiswa,email|max:35',
+            'password' => 'required|min:6',
+        ]);
+
+        Mahasiswa::create([
+            'nim' => $request->nim,
+            'kode_kelas' => $request->kode_kelas,
+            'nama' => $request->nama,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'email' => $request->email,
+            'password' => Hash::make($request->password), // WAJIB di-hash
+        ]);
+
+        return redirect()->route('admin.datamaster.mahasiswa.index')->with('success', 'Mahasiswa baru berhasil ditambahkan.');
+    }
+
+    /**
+     * Menampilkan form edit Mahasiswa.
+     * (Sudah ada di jawaban sebelumnya)
+     */
+    public function editMahasiswa(Mahasiswa $mahasiswa)
+    {
+        $kelas = Kelas::all();
+        return view('admin.datamaster.mahasiswa.edit', compact('mahasiswa', 'kelas'));
+    }
+
+    /**
+     * Menyimpan perubahan data Mahasiswa.
+     * (Sudah ada di jawaban sebelumnya)
+     */
+    public function updateMahasiswa(Request $request, Mahasiswa $mahasiswa)
+    {
+        $request->validate([
+            'kode_kelas' => 'required|exists:kelas,kode_kelas',
+            'nama' => 'required|string|max:40',
+            'tanggal_lahir' => 'nullable|date',
+            'email' => ['required', 'email', 'max:35', Rule::unique('mahasiswa', 'email')->ignore($mahasiswa->nim, 'nim')],
+            'password_baru' => 'nullable|min:6',
+        ]);
+
+        $mahasiswa->kode_kelas = $request->kode_kelas;
+        $mahasiswa->nama = $request->nama;
+        $mahasiswa->tanggal_lahir = $request->tanggal_lahir;
+        $mahasiswa->email = $request->email;
+
+        if ($request->filled('password_baru')) {
+            $mahasiswa->password = Hash::make($request->password_baru);
+        }
+
+        $mahasiswa->save();
+
+        return redirect()->route('admin.datamaster.mahasiswa.index')->with('success', 'Data Mahasiswa berhasil diperbarui.');
+    }
+
+    /**
+     * Menghapus Mahasiswa.
+     */
+    public function destroyMahasiswa(Mahasiswa $mahasiswa)
+    {
+        // Laravel akan otomatis menghapus relasi di absen_mahasiswa
+        // jika Anda mengatur onDelete('cascade') di migration Foreign Key.
+        $mahasiswa->delete();
+
+        return redirect()->route('admin.datamaster.mahasiswa.index')->with('success', 'Data Mahasiswa berhasil dihapus.');
+    }
 }
 

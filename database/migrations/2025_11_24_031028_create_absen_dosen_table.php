@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('pertemuan'); // Pertemuan ke-1, ke-2, dst.
             $table->dateTime('jam_masuk'); // Waktu dosen mulai/buka absensi
             $table->dateTime('jam_keluar')->nullable(); // Waktu dosen selesai/tutup absensi (opsional)
+            $table->string('keterangan')->nullable(); // Waktu dosen selesai/tutup absensi (opsional)
             $table->enum('status', ['Hadir', 'Izin', 'Sakit', 'Digantikan']); // Status kehadiran dosen
             $table->timestamps();
 

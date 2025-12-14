@@ -3,75 +3,38 @@
 @section('title', 'Dashboard Dosen')
 
 @section('content')
-    <h2>Jadwal Mengajar Hari Ini ({{ now()->isoFormat('dddd, D MMMM Y') }})</h2>
+    <h2>Semua Jadwal Mengajar Anda</h2>
+    <p>Total Jadwal Terdaftar: <strong>{{ $semuaJadwal->count() }}</strong></p>
 
-    @if($jadwalHariIni->isEmpty())
-        <p>Tidak ada jadwal mengajar untuk Anda hari ini.</p>
+    @if($semuaJadwal->isEmpty())
+        <p style="border: 1px solid blue; padding: 10px;">Anda belum memiliki jadwal mengajar yang terdaftar.</p>
     @else
         <table border="1" cellpadding="10" cellspacing="0" width="100%">
             <thead>
                 <tr>
+                    <th>Hari</th>
                     <th>Waktu</th>
                     <th>Mata Kuliah</th>
                     <th>Kelas</th>
-                    <th>Aksi Sesi Absensi</th>
-                    <th>Status</th>
+                    <th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($jadwalHariIni as $jadwal)
+                @foreach($semuaJadwal as $jadwal)
                     @php
-                        // Cek status sesi aktif dari relasi AbsenDosen
-                        $sesiAktif = \App\Models\AbsenDosen::where('id_jadwal', $jadwal->id_jadwal)
-                                                            ->whereDate('jam_masuk', now()->toDateString())
-                                                            ->whereNull('jam_keluar')
-                                                            ->first();
+                        // Menentukan highlight jika hari ini
+                        $isHariIni = ($jadwal->hari == $hariIni);
                     @endphp
-                    <tr>
+                    <tr style="{{ $isHariIni ? 'background-color: #d4edda; font-weight: bold;' : '' }}">
+                        <td>{{ $jadwal->hari }} {{ $isHariIni ? '(HARI INI)' : '' }}</td>
                         <td>{{ \Carbon\Carbon::parse($jadwal->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->jam_selesai)->format('H:i') }}</td>
                         <td>{{ $jadwal->matkul->nama_matkul }} ({{ $jadwal->matkul->kode_matkul }})</td>
                         <td>{{ $jadwal->kelas->kode_kelas }}</td>
                         <td>
-                            @if($sesiAktif)
-                                <form action="{{ route('dosen.absensi.tutup', $jadwal->id_jadwal) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menutup sesi absensi ini?')" style="background-color: orange; color: black;">
-                                        Tutup Sesi
-                                    </button>
-                                </form>
-                                <a href="{{ route('dosen.absensi.sesi-aktif', $jadwal->id_jadwal) }}" style="background-color: cyan; color: black; padding: 5px;">
-                                    Lihat Absensi
-                                </a>
-                            @else
-                                @php
-                                    // Cek apakah sesi sudah ditutup sebelumnya hari ini
-                                    $sesiSelesai = \App\Models\AbsenDosen::where('id_jadwal', $jadwal->id_jadwal)
-                                                                        ->whereDate('jam_masuk', now()->toDateString())
-                                                                        ->whereNotNull('jam_keluar')
-                                                                        ->first();
-                                @endphp
-
-                                @if ($sesiSelesai)
-                                    <button disabled>Sesi Selesai</button>
-                                    <a href="{{ route('dosen.absensi.sesi-aktif', $jadwal->id_jadwal) }}">
-                                        Lihat Rekap
-                                    </a>
-                                @else
-                                    <form action="{{ route('dosen.absensi.buka', $jadwal->id_jadwal) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" style="background-color: green; color: white;">
-                                            Buka Sesi Absensi
-                                        </button>
-                                    </form>
-                                @endif
-                            @endif
-                        </td>
-                        <td>
-                            @if($sesiAktif)
-                                [AKTIF]
-                            @else
-                                [TUTUP]
-                            @endif
+                            <a href="{{ route('dosen.detail.jadwal', $jadwal->id_jadwal) }}"
+                               style="background-color: blue; color: white; padding: 5px; text-decoration: none;">
+                                Lihat Detail & Pertemuan
+                            </a>
                         </td>
                     </tr>
                 @endforeach

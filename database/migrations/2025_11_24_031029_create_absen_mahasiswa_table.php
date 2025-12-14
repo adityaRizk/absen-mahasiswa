@@ -16,7 +16,7 @@ return new class extends Migration
             $table->char('nim', 8);
             $table->unsignedBigInteger('id_absen_dosen'); // Kunci yang menandakan sesi absensi aktif oleh dosen
 
-            $table->dateTime('jam_absen');
+            $table->dateTime('jam_absen')->nullable();
             $table->enum('status', ['Hadir', 'Izin', 'Sakit', 'Alpa']);
             $table->timestamps();
 
