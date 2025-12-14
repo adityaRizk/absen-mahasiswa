@@ -42,8 +42,8 @@ Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
     // Detail Absensi Mata Kuliah (Riwayat Absen)
     Route::get('/matkul/{id_jadwal}', [MahasiswaController::class, 'detailMatkul'])->name('detail.matkul');
 
-    // Rute untuk Absen HARI INI (masih dipertahankan, misalnya di dashboard lama atau link terpisah)
-    Route::post('/absen/{id_jadwal}', [MahasiswaController::class, 'absen'])->name('absen');
+    // Rute untuk Absen HARI INI (menggunakan ID Sesi Dosen yang aktif)
+    Route::post('/absen/{id_absen_dosen}', [MahasiswaController::class, 'absen'])->name('absen');
 
     // ... rute lainnya
 });

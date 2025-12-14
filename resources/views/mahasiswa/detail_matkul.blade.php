@@ -12,6 +12,30 @@
         <p><strong>Jadwal:</strong> {{ $jadwal->hari }}, {{ \Carbon\Carbon::parse($jadwal->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->jam_selesai)->format('H:i') }}</p>
     </div>
 
+
+    <h3>Status Absensi Saat Ini</h3>
+
+    <div style="padding: 15px; margin-bottom: 20px; border: 1px solid {{ $canAbsen ? 'green' : 'red' }}; background-color: {{ $canAbsen ? '#d4edda' : '#f8d7da' }};">
+        <p style="font-weight: bold; color: {{ $canAbsen ? '#155724' : '#721c24' }};">
+            {{ $absensiMessage }}
+        </p>
+
+        <form action="{{ $canAbsen ? route('mahasiswa.absen', $idAbsenDosenAktif) : '#' }}" method="POST">
+            @csrf
+            <button type="submit"
+                    style="padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; cursor: pointer;"
+                    {{ $canAbsen ? '' : 'disabled' }}>
+                {{ $canAbsen ? 'ABSEN SEKARANG' : 'ABSEN (Non-Aktif)' }}
+            </button>
+        </form>
+        @if(!$canAbsen)
+            <p style="margin-top: 10px; font-size: 0.9em; color: gray;">Tombol dinonaktifkan karena alasan di atas.</p>
+        @endif
+    </div>
+
+    <hr>
+
+    <h3>Riwayat Pertemuan Selesai</h3>
     @if($dataAbsensi->isEmpty())
         <p>Belum ada riwayat pertemuan yang diselesaikan oleh Dosen.</p>
     @else

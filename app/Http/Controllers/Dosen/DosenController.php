@@ -84,13 +84,13 @@ class DosenController extends Controller
         $nimMahasiswaKelas = $sesi->jadwal->kelas->mahasiswa->pluck('nim');
 
         // Map status absensi yang sudah ada
-        $absensiTercatat = $sesi->absenMahasiswa->pluck('status_absen', 'nim')->toArray();
+        $absensiTercatat = $sesi->absenMahasiswa->pluck('status', 'nim')->toArray();
 
         // Mahasiswa di kelas tersebut (untuk loop di view)
         $mahasiswas = Mahasiswa::whereIn('nim', $nimMahasiswaKelas)
                                 ->orderBy('nim')
                                 ->get();
-
+        // dd($absensiTercatat);
         return view('dosen.kelola_absen', compact('sesi', 'mahasiswas', 'absensiTercatat'));
     }
 
@@ -154,6 +154,16 @@ class DosenController extends Controller
 
         if ($sesiAktif) {
             return redirect()->back()->with('error', 'Sesi absensi pertemuan ke-'.$sesiAktif->pertemuan.' masih aktif. Harap ditutup terlebih dahulu.');
+        }
+
+        $sesiSelesaiHariIni = AbsenDosen::where('id_jadwal', $id_jadwal)
+                                        ->whereDate('jam_masuk', $currentTime->toDateString())
+                                        ->whereNotNull('jam_keluar')
+                                        ->exists();
+
+        if ($sesiSelesaiHariIni) {
+            // Karena sudah ada sesi yang selesai (sudah pernah buka dan tutup) pada hari ini, tolak pembukaan sesi baru.
+            return redirect()->back()->with('error', 'Absensi untuk Mata Kuliah ini sudah dilakukan (buka dan tutup) pada hari ini. Anda hanya dapat membuka sesi satu kali per hari.');
         }
 
         // 4. Buat Sesi Absensi Baru (AbsenDosen)

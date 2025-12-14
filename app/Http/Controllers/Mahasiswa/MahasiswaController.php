@@ -31,104 +31,136 @@ class MahasiswaController extends Controller
     }
 
     /**
-     * Tampilkan detail absensi Mahasiswa untuk Mata Kuliah tertentu.
-     * Halaman Detail Mata Kuliah
+     * Tampilkan detail absensi Mahasiswa untuk Mata Kuliah tertentu dan status tombol Absen.
      */
     public function detailMatkul($id_jadwal)
     {
         $mahasiswa = Auth::guard('mahasiswa')->user();
-
-        // 1. Ambil Jadwal Mata Kuliah
         $jadwal = JadwalMengajar::where('id_jadwal', $id_jadwal)
                                 ->where('kode_kelas', $mahasiswa->kode_kelas)
                                 ->with('matkul', 'dosen')
                                 ->firstOrFail();
 
-        // 2. Ambil Riwayat Sesi Pertemuan Dosen (AbsenDosen) untuk jadwal ini
-        //    dan relasikan dengan AbsenMahasiswa untuk Mahasiswa yang sedang login.
+        // [LOGIKA RIWAYAT ABSENSI DI SINI]
+        // ... (Logika dataAbsensi sebelumnya tetap sama)
+
+        // --- LOGIKA TOMBOL ABSEN ---
+        $canAbsen = false;
+        $absensiMessage = null;
+        $idAbsenDosenAktif = null; // ID Sesi Dosen yang aktif, untuk digunakan di tombol Absen
+
+        $currentTime = Carbon::now("Asia/Jakarta");
+        $hariSekarang = $currentTime->isoFormat('dddd');
+
+
+
+        // Pengecekan 1: Hari harus sesuai jadwal
+        if ($jadwal->hari !== $hariSekarang) {
+            $absensiMessage = 'Absensi hanya dapat dilakukan pada hari ' . $jadwal->hari . '.';
+        } else {
+            // Pengecekan 2: Jendela Waktu
+            $jamMulaiJadwal = Carbon::parse($jadwal->jam_mulai,timezone:"Asia/Jakarta");
+            $jamSelesaiJadwal = Carbon::parse($jadwal->jam_selesai,timezone:"Asia/Jakarta");
+
+            $normalizedA = $currentTime->copy()->setDateFrom(now());
+            $normalizedB = $jamMulaiJadwal->copy()->setDateFrom(now());
+            $normalizedC = $jamSelesaiJadwal->copy()->setDateFrom(now());
+
+            if ($normalizedA->lessThan($normalizedB)) {
+                $absensiMessage = 'Absensi belum dibuka. Dimulai pukul ' . $jamMulaiJadwal->format('H:i') . '.';
+            } elseif ($normalizedA->greaterThan($normalizedC)) {
+                $absensiMessage = 'Waktu absensi telah berakhir pada pukul ' . $normalizedC->format('H:i') . '.';
+            } else {
+                // Pengecekan 3: Sesi Dosen Aktif
+                $sesiAktif = AbsenDosen::where('id_jadwal', $id_jadwal)
+                                       ->whereNull('jam_keluar') // Dosen belum menutup sesi
+                                       ->first();
+
+                if (!$sesiAktif) {
+                    $absensiMessage = 'Dosen belum membuka sesi absensi untuk pertemuan ini.';
+                } else {
+                    $idAbsenDosenAktif = $sesiAktif->id_absen_dosen;
+
+                    // Pengecekan 4: Sudah Absen atau Belum?
+                    $sudahAbsen = AbsenMahasiswa::where('id_absen_dosen', $idAbsenDosenAktif)
+                                                ->where('nim', $mahasiswa->nim)
+                                                ->exists();
+
+                    if ($sudahAbsen) {
+                        $absensiMessage = 'Anda sudah mengisi daftar hadir untuk pertemuan ini.';
+                    } else {
+                        $absensiMessage = 'Silakan klik tombol Absen di bawah untuk mengisi daftar hadir.';
+                        $canAbsen = true;
+                    }
+                }
+            }
+        }
+
+        // Gabungkan data absensi
         $riwayatPertemuan = AbsenDosen::where('id_jadwal', $id_jadwal)
-                                        ->whereNotNull('jam_keluar') // Hanya pertemuan yang sudah SELESAI
+                                        // ->whereNotNull('jam_keluar')
                                         ->with(['absenMahasiswa' => function ($query) use ($mahasiswa) {
                                             $query->where('nim', $mahasiswa->nim);
                                         }])
                                         ->orderBy('pertemuan', 'asc')
                                         ->get();
 
-        // 3. Gabungkan data absensi
         $dataAbsensi = $riwayatPertemuan->map(function ($sesi) use ($mahasiswa) {
             $absen = $sesi->absenMahasiswa->first();
-
+            // dd($absen);
             return [
                 'pertemuan' => $sesi->pertemuan,
                 'tanggal' => Carbon::parse($sesi->jam_masuk)->isoFormat('D MMMM Y'),
-                'keterangan_dosen' => $sesi->keterangan, // Menggunakan kolom 'keterangan' yang baru
-                'status_absen' => $absen->status_absen ?? 'Alpa', // Default 'Alpa' jika tidak ada record
-                // 'jam_absen' => $absen->jam_absen !== null? Carbon::parse($absen->jam_absen)->format('H:i') : '-',
-                'jam_absen' => '-',
+                'keterangan_dosen' => $sesi->keterangan,
+                'status_absen' => $absen->status ?? 'Alpa',
+                // 'jam_absen' => '-',
+                'jam_absen' => $absen ? Carbon::parse($absen->jam_absen)->format('H:i') : '-',
             ];
         });
 
-        return view('mahasiswa.detail_matkul', compact('jadwal', 'dataAbsensi'));
+        // Kirim semua variabel status ke View
+        return view('mahasiswa.detail_matkul', compact('jadwal', 'dataAbsensi', 'canAbsen', 'absensiMessage', 'idAbsenDosenAktif'));
     }
 
     /**
-     * Memproses Absensi Mahasiswa (INSERT ke tabel absen_mahasiswa).
+     * Mencatat absensi Mahasiswa ke tabel absen_mahasiswa.
      */
-    public function absen(Request $request, $id_jadwal)
+    public function absen(Request $request, $id_absen_dosen)
     {
-         $sesiAktif = AbsenDosen::where('id_jadwal', $id_jadwal)
-                        ->whereNull('jam_keluar') // Harus aktif (belum ditutup dosen)
-                        ->with('jadwal')
-                        ->first();
-
-        if (!$sesiAktif) {
-            return redirect()->back()->with('error', 'Sesi absensi belum dibuka atau sudah ditutup oleh Dosen.');
-        }
-
-        // 2. CEK BATAS WAKTU (Integritas Mahasiswa)
-        $currentTime = Carbon::now();
-        $jamSelesaiJadwal = Carbon::parse($sesiAktif->jadwal->jam_selesai);
-
-        // Tambahkan toleransi 15 menit (atau sesuai kebijakan)
-        $batasAkhirAbsen = $jamSelesaiJadwal->copy()->addMinutes(15);
-
-        if ($currentTime->greaterThan($batasAkhirAbsen)) {
-            // Tutup sesi secara otomatis jika terlewat jauh (opsional)
-            // $sesiAktif->update(['jam_keluar' => $jamSelesaiJadwal]);
-
-            return redirect()->back()->with('error', 'Waktu absensi telah berakhir (batas toleransi sampai ' . $batasAkhirAbsen->format('H:i') . ').');
-        }
         $mahasiswa = Auth::guard('mahasiswa')->user();
-        $nim = $mahasiswa->nim;
 
-        // 1. Verifikasi Sesi Aktif AbsenDosen (Harus dibuka Dosen)
-        $sesiAktif = AbsenDosen::where('id_jadwal', $id_jadwal)
-                               ->whereDate('jam_masuk', now()->toDateString())
-                               ->whereNull('jam_keluar')
-                               ->first();
+        // 1. Cek Sesi Dosen aktif (Redundansi keamanan, dicek lagi di server)
+        $sesi = AbsenDosen::where('id_absen_dosen', $id_absen_dosen)
+                          ->whereNull('jam_keluar')
+                          ->with('jadwal.kelas')
+                          ->first();
 
-        if (!$sesiAktif) {
-            return redirect()->back()->with('error', 'Sesi absensi belum dibuka atau sudah ditutup oleh dosen.');
+        if (!$sesi) {
+            return redirect()->back()->with('error', 'Sesi absensi sudah tidak aktif atau tidak ditemukan.');
         }
 
-        // 2. Verifikasi Absensi Ganda
-        $sudahAbsen = AbsenMahasiswa::where('id_absen_dosen', $sesiAktif->id_absen_dosen)
-                                    ->where('nim', $nim)
+        // 2. Cek apakah mahasiswa ini ada di kelas yang bersangkutan
+        if ($sesi->jadwal->kode_kelas !== $mahasiswa->kode_kelas) {
+            return redirect()->back()->with('error', 'Anda tidak terdaftar di kelas ini.');
+        }
+
+        // 3. Cek apakah sudah absen
+        $sudahAbsen = AbsenMahasiswa::where('id_absen_dosen', $id_absen_dosen)
+                                    ->where('nim', $mahasiswa->nim)
                                     ->exists();
 
         if ($sudahAbsen) {
-            return redirect()->back()->with('warning', 'Anda sudah melakukan absensi untuk mata kuliah ini.');
+            return redirect()->back()->with('error', 'Anda sudah mengisi daftar hadir sebelumnya.');
         }
 
-        // 3. Rekam Absensi
+        // 4. Lakukan absensi
         AbsenMahasiswa::create([
-            'id_absen_dosen' => $sesiAktif->id_absen_dosen,
-            'nim' => $nim,
-            'jam_absen' => now(),
-            // Kita bisa tambahkan logika untuk status 'Izin' atau 'Sakit' jika ada form inputnya
-            'status_absen' => $request->status_absen ?? 'Hadir',
+            'id_absen_dosen' => $id_absen_dosen,
+            'nim' => $mahasiswa->nim,
+            'jam_absen' => now(), // Catat waktu absen Mahasiswa
+            'status_absen' => 'Hadir',
         ]);
 
-        return redirect()->back()->with('success', 'Absensi berhasil direkam! Status: Hadir.');
+        return redirect()->back()->with('success', 'Absensi berhasil dicatat! Status Anda: Hadir.');
     }
 }

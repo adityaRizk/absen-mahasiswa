@@ -107,7 +107,7 @@ class DatabaseSeeder extends Seeder
                 'nip' => '197001012000011001',
                 'hari' => 'Minggu',
                 'jam_mulai' => '17:00:00',
-                'jam_selesai' => '21:30:00',
+                'jam_selesai' => '22:30:00',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
