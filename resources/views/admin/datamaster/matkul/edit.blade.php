@@ -7,7 +7,7 @@
     <a href="{{ route('admin.datamaster.matkul.index') }}">Kembali ke Daftar Mata Kuliah</a>
     <hr>
 
-    <form action="{{ route('admin.datamaster.matkul.update', $matkul->kode_matkul) }}" method="POST">
+    <form action="{{ route('admin.datamaster.matkul.update', $matkul->kode_matkul) }}" method="POST" class="data-master-form">
         @csrf
         @method('PUT')
 

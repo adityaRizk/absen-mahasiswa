@@ -7,7 +7,7 @@
     <a href="{{ route('admin.datamaster.kelas.index') }}">Kembali ke Daftar Kelas</a>
     <hr>
 
-    <form action="{{ route('admin.datamaster.kelas.update', $kelas->kode_kelas) }}" method="POST">
+    <form action="{{ route('admin.datamaster.kelas.update', $kelas->kode_kelas) }}" method="POST" class="data-master-form">
         @csrf
         @method('PUT')
 

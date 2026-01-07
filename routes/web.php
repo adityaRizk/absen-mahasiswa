@@ -78,7 +78,7 @@ Route::prefix('dosen')->name('dosen.')->group(function () {
 // ... di dalam Route::middleware('auth.admin')->group(function () { ...
 // --- RUTE UMUM ADMIN ---
 Route::prefix("admin")->name("admin.")->group(function (){
-    Route::get('//dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('//dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
     // --- RUTE DATAMASTER ---
     Route::prefix('datamaster')->name('datamaster.')->group(function () {
@@ -126,6 +126,8 @@ Route::prefix("admin")->name("admin.")->group(function (){
         Route::get('/create', [DataMasterController::class, 'createJadwal'])->name('create');
         Route::post('/', [DataMasterController::class, 'storeJadwal'])->name('store');
         Route::delete('/{jadwal}', [DataMasterController::class, 'destroyJadwal'])->name('destroy');
+        Route::get('/{jadwal}/edit', [DataMasterController::class, 'editJadwal'])->name('edit');
+        Route::put('/{jadwal}', [DataMasterController::class, 'updateJadwal'])->name('update');
         });
     });
 

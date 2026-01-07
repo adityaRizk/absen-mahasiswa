@@ -7,7 +7,7 @@
     <a href="{{ route('admin.datamaster.jadwal.index') }}">Kembali ke Daftar Jadwal</a>
     <hr>
 
-    <form action="{{ route('admin.datamaster.jadwal.store') }}" method="POST">
+    <form action="{{ route('admin.datamaster.jadwal.store') }}" method="POST" class="data-master-form">
         @csrf
 
         <div style="margin-bottom: 15px;">
@@ -53,8 +53,8 @@
             <label for="hari">Hari:</label><br>
             <select id="hari" name="hari" required>
                 <option value="">-- Pilih Hari --</option>
-                @foreach($daftarHari as $en => $id)
-                    <option value="{{ $en }}" {{ old('hari') == $en ? 'selected' : '' }}>
+                @foreach($daftarHari as $id)
+                    <option value="{{ $id }}" {{ old('hari') == $id ? 'selected' : '' }}>
                         {{ $id }}
                     </option>
                 @endforeach

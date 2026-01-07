@@ -206,7 +206,7 @@ class DataMasterController extends Controller
     public function storeMatkul(Request $request)
     {
         $request->validate([
-            'kode_matkul' => 'required|unique:matkul_dasar,kode_matkul|max:10',
+            'kode_matkul' => 'required|unique:matkul_dasar,kode_matkul|max:4',
             'nama_matkul' => 'required|string|max:50',
             'sks' => 'required|integer|min:1|max:6',
         ]);
@@ -280,13 +280,12 @@ class DataMasterController extends Controller
 
         // Daftar hari dalam format yang sesuai dengan skema database ('Monday', 'Tuesday', dll.)
         $daftarHari = [
-            'Monday' => 'Senin',
-            'Tuesday' => 'Selasa',
-            'Wednesday' => 'Rabu',
-            'Thursday' => 'Kamis',
-            'Friday' => 'Jumat',
-            'Saturday' => 'Sabtu',
-            'Sunday' => 'Minggu',
+             'Senin',
+             'Selasa',
+             'Rabu',
+             'Kamis',
+             'Jumat',
+             'Sabtu',
         ];
 
         return view('admin.datamaster.jadwal.create', compact('dosens', 'kelas', 'matkuls', 'daftarHari'));
@@ -297,11 +296,12 @@ class DataMasterController extends Controller
      */
     public function storeJadwal(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'nip' => 'required|exists:dosen,nip',
             'kode_kelas' => 'required|exists:kelas,kode_kelas',
             'kode_matkul' => 'required|exists:matkul_dasar,kode_matkul',
-            'hari' => ['required', Rule::in(array_keys($this->getDaftarHari()))], // Memastikan input hari valid
+            'hari' => 'required',
             'jam_mulai' => 'required|date_format:H:i:s',
             'jam_selesai' => 'required|date_format:H:i:s|after:jam_mulai',
             'ruangan' => 'nullable|string|max:10',
@@ -328,6 +328,69 @@ class DataMasterController extends Controller
         ]));
 
         return redirect()->route('admin.datamaster.jadwal.index')->with('success', 'Jadwal Mengajar berhasil ditambahkan.');
+    }
+
+    /**
+     * Tampilkan form untuk mengedit jadwal tertentu.
+     */
+    public function editJadwal(JadwalMengajar $jadwal)
+    {
+        $dosens = Dosen::all();
+        $kelas = Kelas::all();
+        $matkuls = MatkulDasar::all();
+        $daftarHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+        return view('admin.datamaster.jadwal.edit', compact('jadwal', 'dosens', 'kelas', 'matkuls', 'daftarHari'));
+    }
+
+    /**
+     * Perbarui data jadwal di database.
+     */
+    public function updateJadwal(Request $request, JadwalMengajar $jadwal)
+    {
+        // dd($request->jam_mulai);
+        $request->validate([
+            'nip' => 'required|exists:dosen,nip',
+            'kode_kelas' => 'required|exists:kelas,kode_kelas',
+            'kode_matkul' => 'required|exists:matkul_dasar,kode_matkul',
+            'hari' => ['required', Rule::in(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'])],
+            'jam_mulai' => 'required|date_format:H:i:s',
+            'jam_selesai' => 'required|date_format:H:i:s|after:jam_mulai',
+        ]);
+
+        // Pengecekan Konflik Jadwal
+        $isConflict = JadwalMengajar::where('id_jadwal', '!=', $jadwal->id_jadwal) // Kecualikan jadwal yang sedang diedit
+            ->where('kode_kelas', $request->kode_kelas)
+            ->where('hari', $request->hari)
+            ->where(function ($query) use ($request) {
+                // Konflik jika jadwal baru dimulai di antara jadwal lama
+                $query->whereBetween('jam_mulai', [$request->jam_mulai, $request->jam_selesai])
+                      // Konflik jika jadwal baru berakhir di antara jadwal lama
+                      ->orWhereBetween('jam_selesai', [$request->jam_mulai, $request->jam_selesai])
+                      // Konflik jika jadwal baru mencakup jadwal lama
+                      ->orWhere(function ($query) use ($request) {
+                          $query->where('jam_mulai', '<=', $request->jam_mulai)
+                                ->where('jam_selesai', '>=', $request->jam_selesai);
+                      });
+            })
+            ->exists();
+
+        if ($isConflict) {
+            return redirect()->back()->withInput()->with('error', 'Terjadi konflik jadwal! Kelas ini sudah memiliki mata kuliah pada hari dan jam tersebut.');
+        }
+
+        // Simpan perubahan
+        $jadwal->update([
+            'nip' => $request->nip,
+            'kode_kelas' => $request->kode_kelas,
+            'kode_matkul' => $request->kode_matkul,
+            'hari' => $request->hari,
+            'jam_mulai' => $request->jam_mulai,
+            'jam_selesai' => $request->jam_selesai,
+        ]);
+
+        return redirect()->route('admin.datamaster.jadwal.index')
+                         ->with('success', 'Jadwal berhasil diperbarui!');
     }
 
     /**
@@ -385,7 +448,7 @@ class DataMasterController extends Controller
     public function storeMahasiswa(Request $request)
     {
         $request->validate([
-            'nim' => 'required|char|unique:mahasiswa,nim|max:8',
+            'nim' => 'required|unique:mahasiswa,nim|max:8',
             'kode_kelas' => 'required|exists:kelas,kode_kelas',
             'nama' => 'required|string|max:40',
             'tanggal_lahir' => 'nullable|date',

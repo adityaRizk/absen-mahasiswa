@@ -157,7 +157,7 @@ class MahasiswaController extends Controller
         AbsenMahasiswa::create([
             'id_absen_dosen' => $id_absen_dosen,
             'nim' => $mahasiswa->nim,
-            'jam_absen' => now(), // Catat waktu absen Mahasiswa
+            'jam_absen' => now("Asia/Jakarta"), // Catat waktu absen Mahasiswa
             'status_absen' => 'Hadir',
         ]);
 

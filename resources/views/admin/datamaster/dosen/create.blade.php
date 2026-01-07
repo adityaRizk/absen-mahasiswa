@@ -7,7 +7,7 @@
     <a href="{{ route('admin.datamaster.dosen.index') }}">Kembali ke Daftar Dosen</a>
     <hr>
 
-    <form action="{{ route('admin.datamaster.dosen.store') }}" method="POST">
+    <form action="{{ route('admin.datamaster.dosen.store') }}" method="POST" class="data-master-form">
         @csrf
 
         <div style="margin-bottom: 15px;">

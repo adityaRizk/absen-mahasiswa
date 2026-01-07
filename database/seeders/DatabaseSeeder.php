@@ -102,12 +102,23 @@ class DatabaseSeeder extends Seeder
         JadwalMengajar::insert([
             [
                 // Jadwal 1
-                'kode_matkul' => 'BD40',
+                'kode_matkul' => 'WE30',
                 'kode_kelas' => 'TI2A',
                 'nip' => '197001012000011001',
-                'hari' => 'Minggu',
-                'jam_mulai' => '17:00:00',
-                'jam_selesai' => '22:30:00',
+                'hari' => 'Rabu',
+                'jam_mulai' => '10:00:00',
+                'jam_selesai' => '12:30:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                // Jadwal 1
+                'kode_matkul' => 'WE30',
+                'kode_kelas' => 'TI2A',
+                'nip' => '197001012000011001',
+                'hari' => 'Senin',
+                'jam_mulai' => '10:00:00',
+                'jam_selesai' => '12:30:00',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -118,7 +129,7 @@ class DatabaseSeeder extends Seeder
                 'nip' => '197001012000011001',
                 'hari' => 'Senin',
                 'jam_mulai' => '08:00:00',
-                'jam_selesai' => '10:30:00',
+                'jam_selesai' => '09:30:00',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

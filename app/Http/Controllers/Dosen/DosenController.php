@@ -241,7 +241,7 @@ class DosenController extends Controller
                     [
                         'status' => $status,
                         // Jika status manual diubah ke Hadir/Izin/Sakit, isi jam_absen jika sebelumnya Alpa
-                        'jam_absen' => $status != 'Alpa' ? (AbsenMahasiswa::where('nim', $nim)->where('id_absen_dosen', $sesi->id_absen_dosen)->value('jam_absen') ?? now()) : null
+                        'jam_absen' => $status != 'Alpa' ? (AbsenMahasiswa::where('nim', $nim)->where('id_absen_dosen', $sesi->id_absen_dosen)->value('jam_absen') ?? Carbon::now("Asia/Jakarta")) : null
                     ]
                 );
 

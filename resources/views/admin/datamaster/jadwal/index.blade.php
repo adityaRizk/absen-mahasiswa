@@ -39,7 +39,7 @@
                     <td>{{ $jadwal->hari }}</td>
                     <td>{{ \Carbon\Carbon::parse($jadwal->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->jam_selesai)->format('H:i') }}</td>
                     <td>
-                        <a href="#" style="background-color: orange; color: white; padding: 5px; text-decoration: none; margin-right: 5px;">
+                        <a href="{{ route('admin.datamaster.jadwal.edit', $jadwal->id_jadwal) }}" style="background-color: orange; color: white; padding: 5px; text-decoration: none; margin-right: 5px;">
                             Edit
                         </a>
 

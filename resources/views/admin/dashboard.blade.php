@@ -23,37 +23,16 @@
             <a href="{{ route('admin.datamaster.kelas.index') }}">Lihat Detail</a>
         </div>
         <div style="border: 1px solid #ccc; padding: 15px;">
+            <h3>Total Mata Kuliah</h3>
+            <p style="font-size: 24px;">{{ $totalMatkul }}</p>
+            <a href="{{ route('admin.datamaster.matkul.index') }}">Lihat Detail</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 15px;">
             <h3>Total Jadwal</h3>
             <p style="font-size: 24px;">{{ $totalJadwal }}</p>
-            {{-- <a href="{{ route('admin.datamaster.jadwal.index') }}">Lihat Detail</a> --}}
+            <a href="{{ route('admin.datamaster.jadwal.index') }}">Lihat Detail</a>
         </div>
     </div>
 
     <hr>
-
-    <h3>Top 5 Mahasiswa Paling Rajin Absen</h3>
-    <table border="1" cellpadding="5" cellspacing="0" width="40%">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>NIM</th>
-                <th>Nama</th>
-                <th>Total Hadir</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($topKehadiran as $item)
-            <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td>{{ $item->nim }}</td>
-                <td>{{ $item->mahasiswa->nama }}</td>
-                <td>{{ $item->total_hadir }} kali</td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="4">Belum ada data absensi yang terekam.</td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
 @endsection
